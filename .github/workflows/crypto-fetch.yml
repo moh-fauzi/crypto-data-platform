@@ -21,7 +21,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install requests gspread google-auth
+          pip install requests gspread google-auth pandas
 
       - name: Create service account file
         env:

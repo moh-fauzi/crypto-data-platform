@@ -3,6 +3,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 from datetime import datetime, timezone
 
+
 # =========================
 # KONFIGURASI
 # =========================
@@ -15,12 +16,13 @@ COINS = [
     "bitcoin",
     "ethereum",
     "binancecoin",
-    "solana",
-    "cardano",
     "ripple",
+    "solana",
     "dogecoin",
+    "cardano",
     "polkadot"
 ]
+
 
 # =========================
 # GOOGLE SHEETS
@@ -40,8 +42,9 @@ client = gspread.authorize(credentials)
 
 sheet = client.open(SPREADSHEET_NAME).sheet1
 
+
 # =========================
-# COINGECKO
+# COINGECKO API
 # =========================
 
 url = "https://api.coingecko.com/api/v3/coins/markets"
@@ -55,17 +58,68 @@ params = {
     "sparkline": "false"
 }
 
-response = requests.get(url, params=params)
-
-response.raise_for_status()
-
-data = response.json()
 
 # =========================
-# SIMPAN DATA
+# REQUEST DATA
+# =========================
+
+try:
+
+    response = requests.get(
+        url,
+        params=params,
+        timeout=30
+    )
+
+    response.raise_for_status()
+
+    data = response.json()
+
+except Exception as e:
+
+    print("ERROR mengambil data CoinGecko:")
+    print(e)
+
+    raise
+
+
+# =========================
+# VALIDASI DATA
+# =========================
+
+print(f"Jumlah coin diterima: {len(data)}")
+
+if len(data) != len(COINS):
+
+    print("WARNING: jumlah coin tidak lengkap!")
+
+    received = {coin["id"] for coin in data}
+
+    missing = set(COINS) - received
+
+    print("Coin yang tidak diterima:")
+
+    for coin in missing:
+        print("-", coin)
+
+    raise Exception(
+        f"Data tidak lengkap. "
+        f"Diterima {len(data)}/{len(COINS)} coin."
+    )
+
+
+# =========================
+# TIMESTAMP
 # =========================
 
 timestamp = datetime.now(timezone.utc).isoformat()
+
+
+# =========================
+# SIMPAN KE GOOGLE SHEETS
+# =========================
+
+rows = []
 
 for coin in data:
 
@@ -79,13 +133,25 @@ for coin in data:
         coin["price_change_percentage_24h"]
     ]
 
-    sheet.append_row(row)
+    rows.append(row)
 
     print(
-        coin["name"],
-        "-",
-        coin["current_price"],
-        "USD"
+        f"{coin['name']} | "
+        f"${coin['current_price']} | "
+        f"{coin['symbol']}"
     )
 
-print("Data berhasil dikirim ke Google Sheets!")
+
+# =========================
+# KIRIM SEMUA BARIS
+# =========================
+
+sheet.append_rows(rows)
+
+print()
+print("===================================")
+print("DATA BERHASIL DIKIRIM")
+print("===================================")
+print(f"Timestamp : {timestamp}")
+print(f"Jumlah    : {len(rows)} coin")
+print("===================================")

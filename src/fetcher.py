@@ -1,5 +1,8 @@
 import requests
 import gspread
+import csv
+import os
+
 from google.oauth2.service_account import Credentials
 from datetime import datetime, timezone
 
@@ -11,6 +14,8 @@ from datetime import datetime, timezone
 SERVICE_ACCOUNT_FILE = "service-account.json"
 
 SPREADSHEET_NAME = "Crypto Data Platform"
+
+CSV_FILE = "data/crypto_data.csv"
 
 COINS = [
     "bitcoin",
@@ -116,7 +121,7 @@ timestamp = datetime.now(timezone.utc).isoformat()
 
 
 # =========================
-# SIMPAN KE GOOGLE SHEETS
+# SIAPKAN DATA
 # =========================
 
 rows = []
@@ -143,15 +148,59 @@ for coin in data:
 
 
 # =========================
-# KIRIM SEMUA BARIS
+# SIMPAN KE GOOGLE SHEETS
 # =========================
 
 sheet.append_rows(rows)
 
 print()
+print("Google Sheets berhasil diperbarui.")
+
+
+# =========================
+# SIMPAN KE CSV
+# =========================
+
+os.makedirs("data", exist_ok=True)
+
+file_exists = os.path.exists(CSV_FILE)
+
+with open(
+    CSV_FILE,
+    "a",
+    newline="",
+    encoding="utf-8"
+) as file:
+
+    writer = csv.writer(file)
+
+    # Buat header hanya jika file belum ada
+    if not file_exists:
+
+        writer.writerow([
+            "timestamp",
+            "name",
+            "symbol",
+            "price_usd",
+            "market_cap_usd",
+            "volume_24h_usd",
+            "change_24h_pct"
+        ])
+
+    # Tambahkan 8 data baru
+    writer.writerows(rows)
+
+
+# =========================
+# SELESAI
+# =========================
+
+print()
 print("===================================")
-print("DATA BERHASIL DIKIRIM")
+print("DATA BERHASIL DISIMPAN")
 print("===================================")
 print(f"Timestamp : {timestamp}")
 print(f"Jumlah    : {len(rows)} coin")
+print(f"Google Sheets : OK")
+print(f"CSV           : {CSV_FILE}")
 print("===================================")

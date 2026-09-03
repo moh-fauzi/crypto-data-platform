@@ -2,7 +2,7 @@ name: Crypto Data Fetcher
 
 on:
   schedule:
-    - cron: "7,37 * * * *"
+    - cron: "*/5 * * * *"
       timezone: "Asia/Jakarta"
   workflow_dispatch:
 

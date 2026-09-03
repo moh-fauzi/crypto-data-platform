@@ -3,8 +3,10 @@ name: Crypto Data Fetcher
 on:
   schedule:
     - cron: "*/5 * * * *"
-      timezone: "Asia/Jakarta"
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   fetch-data:
@@ -21,7 +23,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install requests gspread google-auth pandas
+          pip install requests gspread google-auth
 
       - name: Create service account file
         env:
@@ -32,3 +34,14 @@ jobs:
       - name: Run crypto fetcher
         run: |
           python src/fetcher.py
+
+      - name: Update GitHub CSV
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add data/crypto_data.csv
+
+          git diff --cached --quiet || git commit -m "Update crypto data"
+
+          git push
